@@ -6,10 +6,11 @@ var bodyParser = require('body-parser');
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var fs = require('fs');
-
+var tokenBase = {};
 
 // Database
 var dbFile = './user.json';
+var personalDB = './user-personal.json';
 if (fs.existsSync(__dirname + '/user.local.json')) {
   dbFile = './user.local.json';
 }
@@ -90,6 +91,7 @@ app.post('/login', function(req, res, next) {
       var token = jwt.sign({
         username: user.username
       }, jwtSuperSecretCode);
+	  tokenBase[user.username] = 'Bearer ' +token; // smartmove
       return res.json(200, { token: token, user: user });
     });
   })(req, res, next);
@@ -107,7 +109,18 @@ app.get('/users/me', function(req, res) {
     res.json(403, { message: 'Not authorized' });
   }
 });
-
+app.get('/personal',function(req,res){
+	 // How smart
+	console.log(req.headers)
+	console.log(req.user);
+	console.log("Received Token :- " + req.headers.authorization) 
+    console.log("Token we got :- " + tokenBase[req.user.username])
+	if (req.headers.authorization === tokenBase[req.user.username]) {
+    res.status(200).json({"favoriteIceCream":"Vanilla","bigSecret":"That is Secret",});
+  } else {
+    res.json(403, { message: 'Not authorized' });
+  }
+})
 var funnyPicIndex = Math.floor(Math.random()*12);
 function getNextFunnyPic() {
   console.log(funnyPicIndex	);

@@ -1,7 +1,5 @@
 (function() {
   var app = angular.module('ng.jwt.workshop', []);
-
-  app.constant('Firebase', Firebase);
   app.constant('API_BASE', 'http://localhost:3000/');
   app.factory('AuthToken', function($window) {
     var tokenKey = 'user-token';
@@ -39,6 +37,7 @@
         if (token) {
           config.headers = config.headers || {};
           config.headers.Authorization = 'Bearer ' + token;
+		  
         }
         return config;
       },
@@ -52,7 +51,7 @@
     };
   });
   
-  app.controller('MainCtrl', function($scope, $http, API_BASE, $timeout, AuthToken, $window, Firebase) {
+  app.controller('MainCtrl', function($scope, $http, API_BASE, $timeout, AuthToken, $window) {
 
     $scope.getMe = function() {
       $http.get(API_BASE + 'users/me').then(function success(response) {
@@ -105,6 +104,27 @@
       } else {
         $scope.funnyPictureUrl = API_BASE + 'funny-pic?access_token=' + $window.encodeURIComponent(AuthToken.getToken())+'&time='+new Date();
       }
+	  // gaurav starts
+	  $http({
+        url: API_BASE + 'personal',
+        method: 'GET',
+      }).then(function success(response) {
+		  $scope.user = response.data;
+        /*AuthToken.setToken(response.data.token);
+        
+        $scope.noPicture = true;
+        $scope.alreadyLoggedIn = true;
+        showAlert('success', 'Hey there!', 'Welcome ' + $scope.user.username + '!');*/
+      }, function error(response) {
+        if (response.status === 404) {
+          $scope.badCreds = true;
+          showAlert('danger', 'Whoops...', 'Do I know you?');
+        } else {
+          showAlert('danger', 'Hmmm....', 'Problem logging in! Sorry!');
+        }
+      });
+      // gaurav ends
+	  
     };
 
     $scope.logout = function() {
@@ -114,15 +134,6 @@
       showAlert('info', 'Goodbye!', 'Have a great day!');
     };
 
-    $scope.sendFeedback = function(feedback) {
-      var d = new Date();
-      var formattedDate = d.getFullYear() + '-' + addZero(d.getMonth() + 1) + '-' + addZero(d.getDate());
-      var url = 'https://ng-jwt-workshop.firebaseio.com/' + formattedDate;
-      var feedbackRef = new Firebase(url);
-      feedbackRef.push(feedback);
-      showAlert('info', 'Sent!', 'Thanks for the feedback!');
-      $scope.showFeedback = false;
-    };
     function addZero(num) {
       return (num < 10 ? '0' : '') + num;
     }
